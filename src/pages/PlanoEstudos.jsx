@@ -191,10 +191,10 @@ export default function PlanoEstudos() {
         {itens.map((item) => (
           <div
             key={item.id}
-            className="card"
-            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, flexWrap: 'wrap', borderLeft: `4px solid ${corDisciplina(item.disciplina)}` }}
+            className="plano-item"
+            style={{ borderLeft: `4px solid ${corDisciplina(item.disciplina)}` }}
           >
-            <div style={{ flex: 1, minWidth: 180 }}>
+            <div className="plano-item-conteudo">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span className="badge" style={{ background: corDisciplina(item.disciplina) }}>
                   {item.disciplina}
@@ -210,22 +210,24 @@ export default function PlanoEstudos() {
               )}
             </div>
 
-            <select
-              className="input"
-              value={item.status}
-              onChange={(e) => mudarStatus(item, e.target.value)}
-              style={{ maxWidth: 170, color: STATUS[item.status].cor, fontWeight: 600 }}
-            >
-              {Object.entries(STATUS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v.rotulo}
-                </option>
-              ))}
-            </select>
+            <div className="plano-item-acoes">
+              <select
+                className="input"
+                value={item.status}
+                onChange={(e) => mudarStatus(item, e.target.value)}
+                style={{ maxWidth: 170, color: STATUS[item.status].cor, fontWeight: 600 }}
+              >
+                {Object.entries(STATUS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v.rotulo}
+                  </option>
+                ))}
+              </select>
 
-            <button className="btn btn-fantasma" onClick={() => remover(item)} title="Remover">
-              <Trash2 size={16} />
-            </button>
+              <button className="btn btn-fantasma" onClick={() => remover(item)} title="Remover">
+                <Trash2 size={16} />
+              </button>
+            </div>
           </div>
         ))}
       </div>

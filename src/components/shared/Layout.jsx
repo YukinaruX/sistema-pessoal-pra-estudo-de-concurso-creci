@@ -8,6 +8,7 @@ export default function Layout() {
       <Navbar />
       <main className="container surgir pagina" style={{ flex: 1 }}>
         <Outlet />
+        <div className="nav-mobile-spacer" />
       </main>
     </div>
   );
