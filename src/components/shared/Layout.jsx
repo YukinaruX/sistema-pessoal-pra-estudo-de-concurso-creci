@@ -6,7 +6,7 @@ export default function Layout() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
-      <main className="container surgir" style={{ flex: 1, padding: '26px 18px 60px' }}>
+      <main className="container surgir pagina" style={{ flex: 1 }}>
         <Outlet />
       </main>
     </div>

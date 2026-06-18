@@ -282,7 +282,7 @@ export default function Simulado() {
         />
       )}
 
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+      <div className="acoes-simulado" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         <button
           className="btn btn-secundario"
           disabled={indice === 0}

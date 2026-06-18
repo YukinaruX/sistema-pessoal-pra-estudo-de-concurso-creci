@@ -253,3 +253,85 @@ select.input option {
   border-top-color: var(--azul-claro);
   animation: girar 0.8s linear infinite;
 }
+
+/* =============================================================
+   Navegação responsiva e ajustes de mobile
+   ============================================================= */
+
+.nav-desktop {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  overflow-x: auto;
+}
+.nav-mobile {
+  display: none;
+}
+
+.pagina {
+  padding-top: 26px;
+  padding-bottom: 60px;
+}
+
+/* Mobile: troca a navegação do topo por uma barra inferior com ícones */
+@media (max-width: 680px) {
+  .nav-desktop {
+    display: none;
+  }
+  .nav-email {
+    display: none;
+  }
+
+  .nav-mobile {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    justify-content: space-around;
+    gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--borda);
+  }
+  .nav-mobile-item {
+    flex: 1;
+    flex-direction: column !important;
+    gap: 3px !important;
+    padding: 6px 4px !important;
+    border-radius: var(--raio-sm) !important;
+    text-align: center;
+  }
+  .nav-mobile-item span {
+    font-size: 10.5px;
+  }
+
+  /* espaço para a barra inferior não cobrir o conteúdo */
+  .pagina {
+    padding-bottom: 84px;
+  }
+}
+
+/* Telas pequenas: menos respiro lateral e cards mais compactos */
+@media (max-width: 640px) {
+  .container {
+    padding: 0 14px;
+  }
+  .card {
+    padding: 16px;
+  }
+}
+
+/* Telas bem estreitas: botões de ação em coluna, mais fáceis de tocar */
+@media (max-width: 480px) {
+  .acoes-simulado {
+    flex-direction: column;
+  }
+  .acoes-simulado .btn {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+}

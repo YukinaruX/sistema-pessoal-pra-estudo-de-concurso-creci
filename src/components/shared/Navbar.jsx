@@ -17,6 +17,21 @@ const LINKS = [
   { to: '/revisao', label: 'Revisão', icon: RefreshCw },
 ];
 
+function linkStyle({ isActive }) {
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 7,
+    padding: '8px 12px',
+    borderRadius: 'var(--raio-md)',
+    fontSize: 14,
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    color: isActive ? 'var(--texto)' : 'var(--texto-fraco)',
+    background: isActive ? 'rgba(37,99,235,0.18)' : 'transparent',
+  };
+}
+
 export default function Navbar() {
   const { user, sair } = useAuth();
   const navigate = useNavigate();
@@ -27,86 +42,75 @@ export default function Navbar() {
   }
 
   return (
-    <header
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 20,
-        backdropFilter: 'blur(14px)',
-        background: 'rgba(15,23,42,0.72)',
-        borderBottom: '1px solid var(--borda)',
-      }}
-    >
-      <div
-        className="container"
+    <>
+      <header
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 18,
-          height: 64,
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          backdropFilter: 'blur(14px)',
+          background: 'rgba(15,23,42,0.72)',
+          borderBottom: '1px solid var(--borda)',
         }}
       >
-        <NavLink
-          to="/"
-          style={{
-            fontFamily: 'var(--fonte-titulo)',
-            fontWeight: 800,
-            fontSize: 18,
-            background: 'var(--gradiente)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            whiteSpace: 'nowrap',
-          }}
+        <div
+          className="container"
+          style={{ display: 'flex', alignItems: 'center', gap: 18, height: 60 }}
         >
-          CRECI-BA
-        </NavLink>
-
-        <nav
-          style={{
-            display: 'flex',
-            gap: 4,
-            flex: 1,
-            overflowX: 'auto',
-          }}
-        >
-          {LINKS.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
-                padding: '8px 12px',
-                borderRadius: 'var(--raio-md)',
-                fontSize: 14,
-                fontWeight: 600,
-                whiteSpace: 'nowrap',
-                color: isActive ? 'var(--texto)' : 'var(--texto-fraco)',
-                background: isActive ? 'rgba(37,99,235,0.18)' : 'transparent',
-              })}
-            >
-              <Icon size={17} />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="muted-sm" style={{ display: 'none' }} aria-hidden />
-          <span
-            className="muted-sm"
-            title={user?.email}
-            style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          <NavLink
+            to="/"
+            style={{
+              fontFamily: 'var(--fonte-titulo)',
+              fontWeight: 800,
+              fontSize: 18,
+              background: 'var(--gradiente)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              whiteSpace: 'nowrap',
+            }}
           >
-            {user?.email}
-          </span>
-          <button className="btn btn-fantasma" onClick={handleSair} title="Sair">
-            <LogOut size={16} />
-          </button>
+            CRECI-BA
+          </NavLink>
+
+          {/* Navegação no topo — só no desktop (no mobile vira a barra inferior) */}
+          <nav className="nav-desktop">
+            {LINKS.map(({ to, label, icon: Icon, end }) => (
+              <NavLink key={to} to={to} end={end} style={linkStyle}>
+                <Icon size={17} />
+                {label}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
+            <span
+              className="muted-sm nav-email"
+              title={user?.email}
+              style={{
+                maxWidth: 160,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {user?.email}
+            </span>
+            <button className="btn btn-fantasma" onClick={handleSair} title="Sair">
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Barra de navegação inferior — só no mobile */}
+      <nav className="nav-mobile">
+        {LINKS.map(({ to, label, icon: Icon, end }) => (
+          <NavLink key={to} to={to} end={end} style={linkStyle} className="nav-mobile-item">
+            <Icon size={20} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+    </>
   );
 }
