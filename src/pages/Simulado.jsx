@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Flag, Filter, Clock, Play } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient.js';
@@ -31,18 +31,57 @@ export default function Simulado() {
   const [indice, setIndice] = useState(0);
   const [finalizando, setFinalizando] = useState(false);
 
-  // Cronômetro — segundos decorridos desde `iniciado_em`, atualizado a cada
-  // segundo via setInterval (Date.now só dentro do callback, nunca no render).
+  // Cronômetro que PAUSA quando a aba fica oculta ou você sai da página. O tempo
+  // ativo é acumulado em `tempo_segundos` e persistido a cada pausa, então ao
+  // voltar ele continua de onde parou (sem contar o tempo em que ficou fora).
   const [segundos, setSegundos] = useState(0);
+  const baseRef = useRef(0); // segundos já acumulados antes desta sessão ativa
+  const sessaoInicioRef = useRef(null); // ms do início da sessão ativa (null = pausado)
+  const tentativaIdRef = useRef(null);
+  const finalizadoRef = useRef(false);
+
+  const persistirTempo = useCallback(async (total) => {
+    const id = tentativaIdRef.current;
+    if (id == null || finalizadoRef.current) return;
+    await supabase.from('tentativas').update({ tempo_segundos: total }).eq('id', id);
+  }, []);
+
   useEffect(() => {
-    const iso = tentativa?.iniciadoEm;
-    if (!iso) return undefined;
-    const base = new Date(iso).getTime();
-    const id = setInterval(() => {
-      setSegundos(Math.floor((Date.now() - base) / 1000));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [tentativa?.iniciadoEm]);
+    if (!tentativa?.id) return undefined;
+    tentativaIdRef.current = tentativa.id;
+    baseRef.current = tentativa.tempoSegundos || 0;
+    sessaoInicioRef.current = Date.now();
+
+    const calc = () =>
+      baseRef.current +
+      (sessaoInicioRef.current ? Math.floor((Date.now() - sessaoInicioRef.current) / 1000) : 0);
+
+    const pintarInicial = setTimeout(() => setSegundos(calc()), 0);
+    const tick = setInterval(() => setSegundos(calc()), 1000);
+
+    const pausar = () => {
+      if (sessaoInicioRef.current == null) return;
+      baseRef.current = calc();
+      sessaoInicioRef.current = null;
+      setSegundos(baseRef.current);
+      persistirTempo(baseRef.current);
+    };
+    const retomar = () => {
+      if (sessaoInicioRef.current == null) sessaoInicioRef.current = Date.now();
+    };
+    const aoMudarVisibilidade = () => (document.hidden ? pausar() : retomar());
+
+    document.addEventListener('visibilitychange', aoMudarVisibilidade);
+    window.addEventListener('pagehide', pausar);
+
+    return () => {
+      clearTimeout(pintarInicial);
+      clearInterval(tick);
+      document.removeEventListener('visibilitychange', aoMudarVisibilidade);
+      window.removeEventListener('pagehide', pausar);
+      pausar(); // ao sair da página (navegar/desmontar), acumula e salva o tempo
+    };
+  }, [tentativa?.id, tentativa?.tempoSegundos, persistirTempo]);
 
   // Carrega as questões do simulado.
   useEffect(() => {
@@ -148,6 +187,12 @@ export default function Simulado() {
   async function finalizar() {
     if (!confirm('Finalizar o simulado? Você não poderá mais alterar as respostas.')) return;
     setFinalizando(true);
+    // Trava a persistência automática do cronômetro para o cleanup não
+    // sobrescrever o tempo final com um valor defasado.
+    finalizadoRef.current = true;
+    const tempoFinal =
+      baseRef.current +
+      (sessaoInicioRef.current ? Math.floor((Date.now() - sessaoInicioRef.current) / 1000) : 0);
     try {
       // Estatísticas sobre TODAS as questões do simulado (não só o filtro).
       const todas = questoes.map((q) => respostas[q.id] || { resposta: null, correta: null });
@@ -157,7 +202,7 @@ export default function Simulado() {
         .from('tentativas')
         .update({
           finalizado_em: new Date().toISOString(),
-          tempo_segundos: segundos,
+          tempo_segundos: tempoFinal,
           total_certas: resumo.certas,
           total_erradas: resumo.erradas,
           total_brancos: resumo.brancos,
@@ -191,6 +236,9 @@ export default function Simulado() {
       navigate(`/resultado/${tentativa.id}`);
     } catch (err) {
       alert('Erro ao finalizar: ' + err.message);
+      // Destrava e retoma o cronômetro para o usuário poder tentar de novo.
+      finalizadoRef.current = false;
+      if (sessaoInicioRef.current == null) sessaoInicioRef.current = Date.now();
       setFinalizando(false);
     }
   }
