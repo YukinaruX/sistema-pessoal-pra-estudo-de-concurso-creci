@@ -57,6 +57,16 @@ export function useTentativaAtiva(userId) {
     })();
   }, [userId]);
 
+  // Descarta a tentativa em andamento atual (apaga do banco; as respostas caem
+  // junto por cascata). Usado pelo "Começar novo".
+  const descartarTentativa = useCallback(async () => {
+    if (tentativa?.id) {
+      await supabase.from('tentativas').delete().eq('id', tentativa.id);
+    }
+    setRespostas({});
+    setTentativa(null);
+  }, [tentativa]);
+
   // Cria uma nova tentativa — este é o gatilho que inicia o cronômetro.
   const iniciarTentativa = useCallback(async () => {
     if (!userId) return;
@@ -113,5 +123,6 @@ export function useTentativaAtiva(userId) {
     erro,
     salvarResposta,
     iniciarTentativa,
+    descartarTentativa,
   };
 }

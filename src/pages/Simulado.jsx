@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Flag, Filter, Clock, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flag, Filter, Play, RotateCcw } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient.js';
 import { questaoFromRow } from '../lib/mappers.js';
 import { useAuth } from '../hooks/useAuth.js';
@@ -8,6 +8,7 @@ import { useTentativaAtiva } from '../hooks/useTentativaAtiva.js';
 import { resumoRespostas, formatarTempo } from '../lib/estatisticas.js';
 import { inicializarCard } from '../lib/leitner.js';
 import QuestaoCard from '../components/simulado/QuestaoCard.jsx';
+import Cronometro from '../components/simulado/Cronometro.jsx';
 import Loading from '../components/shared/Loading.jsx';
 
 export default function Simulado() {
@@ -22,6 +23,7 @@ export default function Simulado() {
     salvarResposta,
     setTentativa,
     iniciarTentativa,
+    descartarTentativa,
   } = useTentativaAtiva(user?.id);
 
   const [questoes, setQuestoes] = useState([]);
@@ -30,58 +32,11 @@ export default function Simulado() {
   const [filtro, setFiltro] = useState('Todas');
   const [indice, setIndice] = useState(0);
   const [finalizando, setFinalizando] = useState(false);
+  const [entrouNaProva, setEntrouNaProva] = useState(false);
 
-  // Cronômetro que PAUSA quando a aba fica oculta ou você sai da página. O tempo
-  // ativo é acumulado em `tempo_segundos` e persistido a cada pausa, então ao
-  // voltar ele continua de onde parou (sem contar o tempo em que ficou fora).
-  const [segundos, setSegundos] = useState(0);
-  const baseRef = useRef(0); // segundos já acumulados antes desta sessão ativa
-  const sessaoInicioRef = useRef(null); // ms do início da sessão ativa (null = pausado)
-  const tentativaIdRef = useRef(null);
-  const finalizadoRef = useRef(false);
-
-  const persistirTempo = useCallback(async (total) => {
-    const id = tentativaIdRef.current;
-    if (id == null || finalizadoRef.current) return;
-    await supabase.from('tentativas').update({ tempo_segundos: total }).eq('id', id);
-  }, []);
-
-  useEffect(() => {
-    if (!tentativa?.id) return undefined;
-    tentativaIdRef.current = tentativa.id;
-    baseRef.current = tentativa.tempoSegundos || 0;
-    sessaoInicioRef.current = Date.now();
-
-    const calc = () =>
-      baseRef.current +
-      (sessaoInicioRef.current ? Math.floor((Date.now() - sessaoInicioRef.current) / 1000) : 0);
-
-    const pintarInicial = setTimeout(() => setSegundos(calc()), 0);
-    const tick = setInterval(() => setSegundos(calc()), 1000);
-
-    const pausar = () => {
-      if (sessaoInicioRef.current == null) return;
-      baseRef.current = calc();
-      sessaoInicioRef.current = null;
-      setSegundos(baseRef.current);
-      persistirTempo(baseRef.current);
-    };
-    const retomar = () => {
-      if (sessaoInicioRef.current == null) sessaoInicioRef.current = Date.now();
-    };
-    const aoMudarVisibilidade = () => (document.hidden ? pausar() : retomar());
-
-    document.addEventListener('visibilitychange', aoMudarVisibilidade);
-    window.addEventListener('pagehide', pausar);
-
-    return () => {
-      clearTimeout(pintarInicial);
-      clearInterval(tick);
-      document.removeEventListener('visibilitychange', aoMudarVisibilidade);
-      window.removeEventListener('pagehide', pausar);
-      pausar(); // ao sair da página (navegar/desmontar), acumula e salva o tempo
-    };
-  }, [tentativa?.id, tentativa?.tempoSegundos, persistirTempo]);
+  // O cronômetro vive isolado em <Cronometro> (não re-renderiza a página a cada
+  // segundo). O pai só lê o tempo / trava a persistência via esta ref.
+  const cronometroRef = useRef(null);
 
   // Carrega as questões do simulado.
   useEffect(() => {
@@ -122,9 +77,48 @@ export default function Simulado() {
       <ErroBox texto="Nenhuma questão encontrada. Rode o seed do banco (supabase/seed.sql)." />
     );
 
-  // Sem tentativa em andamento: tela inicial. O cronômetro só começa ao clicar
-  // em "Começar simulado" (gatilho que cria a tentativa).
-  if (!tentativa) {
+  async function começarNovo() {
+    if (tentativa) await descartarTentativa();
+    await iniciarTentativa();
+    setIndice(0);
+    setEntrouNaProva(true);
+  }
+
+  // Antes de entrar na prova: tela inicial (o cronômetro só começa aqui).
+  if (!entrouNaProva) {
+    // Há um simulado em andamento dos acessos anteriores → continuar ou recomeçar.
+    if (tentativa) {
+      return (
+        <div className="grid" style={{ gap: 18 }}>
+          <h1 style={{ fontSize: 28 }}>Simulado</h1>
+          <div className="card surgir" style={{ display: 'grid', gap: 18, padding: 26 }}>
+            <div>
+              <h2 style={{ fontSize: 20 }}>Você tem um simulado em andamento</h2>
+              <p className="muted-sm" style={{ marginTop: 6, lineHeight: 1.6 }}>
+                {respondidas} de {questoes.length} questões respondidas · tempo acumulado{' '}
+                {formatarTempo(tentativa.tempoSegundos || 0)}. Continue de onde parou ou comece
+                um novo (o anterior será descartado).
+              </p>
+            </div>
+            {erro && <ErroBox texto={erro} />}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-primario"
+                onClick={() => setEntrouNaProva(true)}
+                disabled={iniciando}
+              >
+                <Play size={17} /> Continuar simulado
+              </button>
+              <button className="btn btn-secundario" onClick={começarNovo} disabled={iniciando}>
+                <RotateCcw size={16} /> {iniciando ? 'Aguarde…' : 'Começar novo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Nenhuma tentativa: escolher filtro e começar.
     return (
       <div className="grid" style={{ gap: 18 }}>
         <h1 style={{ fontSize: 28 }}>Simulado</h1>
@@ -166,7 +160,7 @@ export default function Simulado() {
 
           <button
             className="btn btn-primario"
-            onClick={iniciarTentativa}
+            onClick={começarNovo}
             disabled={iniciando}
             style={{ justifySelf: 'start' }}
           >
@@ -176,6 +170,9 @@ export default function Simulado() {
       </div>
     );
   }
+
+  // entrou na prova mas a tentativa ainda não chegou (criação em andamento)
+  if (!tentativa) return <Loading texto="Iniciando simulado…" />;
 
   const questaoAtual = lista[indice];
 
@@ -187,12 +184,10 @@ export default function Simulado() {
   async function finalizar() {
     if (!confirm('Finalizar o simulado? Você não poderá mais alterar as respostas.')) return;
     setFinalizando(true);
-    // Trava a persistência automática do cronômetro para o cleanup não
-    // sobrescrever o tempo final com um valor defasado.
-    finalizadoRef.current = true;
-    const tempoFinal =
-      baseRef.current +
-      (sessaoInicioRef.current ? Math.floor((Date.now() - sessaoInicioRef.current) / 1000) : 0);
+    // Trava a persistência do cronômetro (para o salvamento automático não
+    // sobrescrever o tempo final) e lê o tempo decorrido dele.
+    cronometroRef.current?.travar();
+    const tempoFinal = cronometroRef.current?.getTempo() ?? (tentativa.tempoSegundos || 0);
     try {
       // Estatísticas sobre TODAS as questões do simulado (não só o filtro).
       const todas = questoes.map((q) => respostas[q.id] || { resposta: null, correta: null });
@@ -236,9 +231,8 @@ export default function Simulado() {
       navigate(`/resultado/${tentativa.id}`);
     } catch (err) {
       alert('Erro ao finalizar: ' + err.message);
-      // Destrava e retoma o cronômetro para o usuário poder tentar de novo.
-      finalizadoRef.current = false;
-      if (sessaoInicioRef.current == null) sessaoInicioRef.current = Date.now();
+      // Destrava o cronômetro para o usuário poder tentar de novo.
+      cronometroRef.current?.travar(false);
       setFinalizando(false);
     }
   }
@@ -247,12 +241,11 @@ export default function Simulado() {
     <div className="grid" style={{ gap: 18 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <h1 style={{ fontSize: 26 }}>Simulado</h1>
-        <div
-          className="badge"
-          style={{ background: 'var(--superficie-2)', gap: 6, fontSize: 14, padding: '7px 14px' }}
-        >
-          <Clock size={15} /> {formatarTempo(segundos)}
-        </div>
+        <Cronometro
+          ref={cronometroRef}
+          tentativaId={tentativa.id}
+          tempoInicial={tentativa.tempoSegundos || 0}
+        />
         <div className="muted-sm" style={{ marginLeft: 'auto' }}>
           {respondidas} de {questoes.length} respondidas
         </div>
@@ -314,38 +307,57 @@ export default function Simulado() {
         </button>
       </div>
 
-      {/* Navegação rápida por número */}
-      <div className="card" style={{ padding: 14 }}>
-        <div className="muted-sm" style={{ marginBottom: 10 }}>Ir para a questão</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {lista.map((q, i) => {
-            const r = respostas[q.id]?.resposta;
-            return (
-              <button
-                key={q.id}
-                onClick={() => setIndice(i)}
-                title={`Questão ${i + 1}`}
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 10,
-                  fontWeight: 700,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  color: 'var(--texto)',
-                  border: i === indice ? '2px solid var(--azul-claro)' : '1px solid var(--borda)',
-                  background: r ? 'rgba(37,99,235,0.25)' : 'var(--superficie)',
-                }}
-              >
-                {i + 1}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <GradeNavegacao lista={lista} respostas={respostas} indice={indice} onIr={setIndice} />
     </div>
   );
 }
+
+// Botão de navegação memoizado: só re-renderiza quando o SEU estado muda
+// (virou o atual, ou passou a ter resposta). Ao responder uma questão, apenas
+// um botão muda — os demais são pulados pelo React.memo.
+const BotaoNav = memo(function BotaoNav({ numero, indice, ativo, respondido, onIr }) {
+  return (
+    <button
+      onClick={() => onIr(indice)}
+      title={`Questão ${numero}`}
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: 10,
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: 'pointer',
+        color: 'var(--texto)',
+        border: ativo ? '2px solid var(--azul-claro)' : '1px solid var(--borda)',
+        background: respondido ? 'rgba(37,99,235,0.25)' : 'var(--superficie)',
+      }}
+    >
+      {numero}
+    </button>
+  );
+});
+
+// Grade de navegação memoizada. `onIr` deve ser estável (passamos o setIndice,
+// que o React garante constante) para o memo dos botões funcionar.
+const GradeNavegacao = memo(function GradeNavegacao({ lista, respostas, indice, onIr }) {
+  return (
+    <div className="card" style={{ padding: 14 }}>
+      <div className="muted-sm" style={{ marginBottom: 10 }}>Ir para a questão</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {lista.map((q, i) => (
+          <BotaoNav
+            key={q.id}
+            numero={i + 1}
+            indice={i}
+            ativo={i === indice}
+            respondido={Boolean(respostas[q.id]?.resposta)}
+            onIr={onIr}
+          />
+        ))}
+      </div>
+    </div>
+  );
+});
 
 function ErroBox({ texto }) {
   return (
