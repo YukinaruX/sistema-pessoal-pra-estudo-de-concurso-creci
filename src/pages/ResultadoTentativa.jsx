@@ -5,11 +5,16 @@ import { supabase } from '../lib/supabaseClient.js';
 import { tentativaFromRow, questaoFromRow } from '../lib/mappers.js';
 import { desempenhoPorDisciplina, formatarTempo } from '../lib/estatisticas.js';
 import { corDisciplina } from '../styles/theme.js';
+import { NIVEIS, ROTULOS, CORES } from '../lib/dificuldade.js';
+import { useDificuldade } from '../hooks/useDificuldade.js';
+import { useAuth } from '../hooks/useAuth.js';
 import QuestaoCard from '../components/simulado/QuestaoCard.jsx';
 import Loading from '../components/shared/Loading.jsx';
 
 export default function ResultadoTentativa() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const { dificuldades } = useDificuldade(user?.id);
   const [tentativa, setTentativa] = useState(null);
   const [itens, setItens] = useState([]); // { questao, resposta }
   const [carregando, setCarregando] = useState(true);
@@ -74,6 +79,55 @@ export default function ResultadoTentativa() {
         <Metrica icon={Clock} cor="var(--alerta)" valor={formatarTempo(tentativa.tempoSegundos)} rotulo="Tempo" />
       </div>
 
+      {(() => {
+        const porDific = NIVEIS
+          .map((nivel) => {
+            const questoesNivel = itens.filter(
+              (it) => (dificuldades.get(it.questao.id) ?? 'nova') === nivel
+            );
+            const certas = questoesNivel.filter((it) => it.resposta === it.questao.gabarito).length;
+            return { nivel, total: questoesNivel.length, certas };
+          })
+          .filter((d) => d.total > 0);
+
+        if (porDific.length === 0) return null;
+        return (
+          <div className="card">
+            <h3 style={{ marginBottom: 14, fontSize: 17 }}>Desempenho por dificuldade</h3>
+            <div className="grid" style={{ gap: 12 }}>
+              {porDific.map((d) => {
+                const pct = d.total > 0 ? Math.round((d.certas / d.total) * 100) : 0;
+                return (
+                  <div key={d.nivel}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 14 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span
+                          className="badge"
+                          style={{ background: CORES[d.nivel], fontSize: 11 }}
+                        >
+                          {ROTULOS[d.nivel]}
+                        </span>
+                      </span>
+                      <span className="muted-sm">{d.certas}/{d.total} · {pct}%</span>
+                    </div>
+                    <div style={{ height: 9, borderRadius: 999, background: 'var(--superficie)', overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          width: `${pct}%`,
+                          height: '100%',
+                          background: CORES[d.nivel],
+                          transition: 'width .5s ease',
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {porDisc.length > 0 && (
         <div className="card">
           <h3 style={{ marginBottom: 14, fontSize: 17 }}>Desempenho por disciplina</h3>
@@ -113,6 +167,7 @@ export default function ResultadoTentativa() {
             resposta={it.resposta}
             onResponder={() => {}}
             revelar
+            dificuldade={dificuldades.get(it.questao.id) ?? 'nova'}
           />
         ))}
       </div>

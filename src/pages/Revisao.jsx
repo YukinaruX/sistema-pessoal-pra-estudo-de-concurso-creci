@@ -26,6 +26,7 @@ export default function Revisao() {
           .select('*, questoes(*)')
           .eq('user_id', user.id)
           .lte('proxima_revisao', hoje)
+          .order('caixa', { ascending: true })
           .order('proxima_revisao', { ascending: true });
         if (error) throw error;
 

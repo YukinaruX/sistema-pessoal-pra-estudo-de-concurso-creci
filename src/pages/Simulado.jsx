@@ -5,8 +5,10 @@ import { supabase } from '../lib/supabaseClient.js';
 import { questaoFromRow } from '../lib/mappers.js';
 import { useAuth } from '../hooks/useAuth.js';
 import { useTentativaAtiva } from '../hooks/useTentativaAtiva.js';
+import { useDificuldade } from '../hooks/useDificuldade.js';
 import { resumoRespostas, formatarTempo } from '../lib/estatisticas.js';
 import { inicializarCard } from '../lib/leitner.js';
+import { NIVEIS, ROTULOS, CORES } from '../lib/dificuldade.js';
 import QuestaoCard from '../components/simulado/QuestaoCard.jsx';
 import Cronometro from '../components/simulado/Cronometro.jsx';
 import Loading from '../components/shared/Loading.jsx';
@@ -39,15 +41,19 @@ export default function Simulado() {
   const [carregandoQ, setCarregandoQ] = useState(true);
   const [erroQ, setErroQ] = useState(null);
   const [filtro, setFiltro] = useState('Todas');
+  const [filtroDificuldade, setFiltroDificuldade] = useState('Todas');
   const [indice, setIndice] = useState(0);
   const [finalizando, setFinalizando] = useState(false);
   const [entrouNaProva, setEntrouNaProva] = useState(false);
   const [qtdQuestoes, setQtdQuestoes] = useState(0);
 
-  const totalDisponivel = useMemo(
-    () => (filtro === 'Todas' ? questoes.length : questoes.filter((q) => q.disciplina === filtro).length),
-    [questoes, filtro]
-  );
+  const totalDisponivel = useMemo(() => {
+    let base = filtro === 'Todas' ? questoes : questoes.filter((q) => q.disciplina === filtro);
+    if (filtroDificuldade !== 'Todas') {
+      base = base.filter((q) => (dificuldades.get(q.id) ?? 'nova') === filtroDificuldade);
+    }
+    return base.length;
+  }, [questoes, filtro, filtroDificuldade, dificuldades]);
 
   useEffect(() => {
     if (totalDisponivel > 0 && !entrouNaProva) {
@@ -57,6 +63,7 @@ export default function Simulado() {
 
   // O cronômetro vive isolado em <Cronometro> (não re-renderiza a página a cada
   // segundo). O pai só lê o tempo / trava a persistência via esta ref.
+  const { dificuldades } = useDificuldade(user?.id);
   const cronometroRef = useRef(null);
 
   // Carrega as questões do simulado.
@@ -104,7 +111,10 @@ export default function Simulado() {
 
   async function começarNovo() {
     if (tentativa) await descartarTentativa();
-    const base = filtro === 'Todas' ? questoes : questoes.filter((q) => q.disciplina === filtro);
+    let base = filtro === 'Todas' ? questoes : questoes.filter((q) => q.disciplina === filtro);
+    if (filtroDificuldade !== 'Todas') {
+      base = base.filter((q) => (dificuldades.get(q.id) ?? 'nova') === filtroDificuldade);
+    }
     const selecionadas = embaralhar(base).slice(0, qtdQuestoes);
     await iniciarTentativa(selecionadas.map((q) => q.id));
     setIndice(0);
@@ -181,6 +191,23 @@ export default function Simulado() {
             <div className="muted-sm" style={{ marginTop: 8 }}>
               {totalDisponivel} questões neste filtro · {questoes.length} no total
             </div>
+          </div>
+
+          <div>
+            <label className="campo">
+              <Filter size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> Filtrar por dificuldade
+            </label>
+            <select
+              className="input"
+              value={filtroDificuldade}
+              onChange={(e) => { setFiltroDificuldade(e.target.value); setIndice(0); }}
+              style={{ maxWidth: 220 }}
+            >
+              <option value="Todas">Todas</option>
+              {NIVEIS.map((n) => (
+                <option key={n} value={n}>{ROTULOS[n]}</option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -328,6 +355,7 @@ export default function Simulado() {
           total={lista.length}
           resposta={respostas[questaoAtual.id]?.resposta || null}
           onResponder={responder}
+          dificuldade={dificuldades.get(questaoAtual.id) ?? 'nova'}
         />
       )}
 

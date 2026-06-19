@@ -1,5 +1,6 @@
 import { Check, X, CircleDashed } from 'lucide-react';
 import { corDisciplina } from '../../styles/theme.js';
+import { ROTULOS, CORES } from '../../lib/dificuldade.js';
 
 // Botão de alternativa (Certo/Errado). Componente de módulo para não ser
 // recriado a cada render do card.
@@ -52,6 +53,7 @@ export default function QuestaoCard({
   resposta,
   onResponder,
   revelar = false,
+  dificuldade,
 }) {
   const cor = corDisciplina(questao.disciplina);
   const acertou = resposta && resposta === questao.gabarito;
@@ -63,6 +65,14 @@ export default function QuestaoCard({
           {questao.disciplina}
         </span>
         <span className="muted-sm">{questao.assunto}</span>
+        {dificuldade && (
+          <span
+            className="badge"
+            style={{ background: CORES[dificuldade], fontSize: 11, marginLeft: 4 }}
+          >
+            {ROTULOS[dificuldade]}
+          </span>
+        )}
         <span className="muted-sm" style={{ marginLeft: 'auto' }}>
           Questão {numero} / {total}
         </span>
