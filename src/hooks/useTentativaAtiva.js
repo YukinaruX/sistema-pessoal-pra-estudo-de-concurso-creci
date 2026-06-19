@@ -68,14 +68,15 @@ export function useTentativaAtiva(userId) {
   }, [tentativa]);
 
   // Cria uma nova tentativa — este é o gatilho que inicia o cronômetro.
-  const iniciarTentativa = useCallback(async () => {
+  // questaoIds: array de IDs na ordem embaralhada escolhida pelo usuário.
+  const iniciarTentativa = useCallback(async (questaoIds) => {
     if (!userId) return;
     setIniciando(true);
     setErro(null);
     try {
       const { data, error } = await supabase
         .from('tentativas')
-        .insert({ user_id: userId, simulado_id: SIMULADO_PADRAO })
+        .insert({ user_id: userId, simulado_id: SIMULADO_PADRAO, questoes_ids: questaoIds ?? null })
         .select('*')
         .single();
       if (error) throw error;

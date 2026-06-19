@@ -11,6 +11,15 @@ import QuestaoCard from '../components/simulado/QuestaoCard.jsx';
 import Cronometro from '../components/simulado/Cronometro.jsx';
 import Loading from '../components/shared/Loading.jsx';
 
+function embaralhar(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export default function Simulado() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -33,6 +42,18 @@ export default function Simulado() {
   const [indice, setIndice] = useState(0);
   const [finalizando, setFinalizando] = useState(false);
   const [entrouNaProva, setEntrouNaProva] = useState(false);
+  const [qtdQuestoes, setQtdQuestoes] = useState(0);
+
+  const totalDisponivel = useMemo(
+    () => (filtro === 'Todas' ? questoes.length : questoes.filter((q) => q.disciplina === filtro).length),
+    [questoes, filtro]
+  );
+
+  useEffect(() => {
+    if (totalDisponivel > 0 && !entrouNaProva) {
+      setQtdQuestoes((prev) => (prev <= 0 ? totalDisponivel : Math.min(prev, totalDisponivel)));
+    }
+  }, [totalDisponivel, entrouNaProva]);
 
   // O cronômetro vive isolado em <Cronometro> (não re-renderiza a página a cada
   // segundo). O pai só lê o tempo / trava a persistência via esta ref.
@@ -62,10 +83,14 @@ export default function Simulado() {
     [questoes]
   );
 
-  const lista = useMemo(
-    () => (filtro === 'Todas' ? questoes : questoes.filter((q) => q.disciplina === filtro)),
-    [questoes, filtro]
-  );
+  const lista = useMemo(() => {
+    if (entrouNaProva && tentativa?.questoesIds?.length > 0) {
+      const porId = Object.fromEntries(questoes.map((q) => [q.id, q]));
+      const ordenadas = tentativa.questoesIds.map((id) => porId[id]).filter(Boolean);
+      return filtro === 'Todas' ? ordenadas : ordenadas.filter((q) => q.disciplina === filtro);
+    }
+    return filtro === 'Todas' ? questoes : questoes.filter((q) => q.disciplina === filtro);
+  }, [questoes, filtro, tentativa, entrouNaProva]);
 
   const respondidas = Object.values(respostas).filter((r) => r.resposta).length;
 
@@ -79,7 +104,9 @@ export default function Simulado() {
 
   async function começarNovo() {
     if (tentativa) await descartarTentativa();
-    await iniciarTentativa();
+    const base = filtro === 'Todas' ? questoes : questoes.filter((q) => q.disciplina === filtro);
+    const selecionadas = embaralhar(base).slice(0, qtdQuestoes);
+    await iniciarTentativa(selecionadas.map((q) => q.id));
     setIndice(0);
     setEntrouNaProva(true);
   }
@@ -95,7 +122,7 @@ export default function Simulado() {
             <div>
               <h2 style={{ fontSize: 20 }}>Você tem um simulado em andamento</h2>
               <p className="muted-sm" style={{ marginTop: 6, lineHeight: 1.6 }}>
-                {respondidas} de {questoes.length} questões respondidas · tempo acumulado{' '}
+                {respondidas} de {tentativa.questoesIds?.length ?? questoes.length} questões respondidas · tempo acumulado{' '}
                 {formatarTempo(tentativa.tempoSegundos || 0)}. Continue de onde parou ou comece
                 um novo (o anterior será descartado).
               </p>
@@ -152,7 +179,26 @@ export default function Simulado() {
               ))}
             </select>
             <div className="muted-sm" style={{ marginTop: 8 }}>
-              {lista.length} questões neste filtro · {questoes.length} no total
+              {totalDisponivel} questões neste filtro · {questoes.length} no total
+            </div>
+          </div>
+
+          <div>
+            <label className="campo">Número de questões</label>
+            <input
+              type="number"
+              className="input"
+              min={1}
+              max={totalDisponivel}
+              value={qtdQuestoes || ''}
+              onChange={(e) => {
+                const v = Math.max(1, Math.min(totalDisponivel, Number(e.target.value) || 1));
+                setQtdQuestoes(v);
+              }}
+              style={{ maxWidth: 120 }}
+            />
+            <div className="muted-sm" style={{ marginTop: 4 }}>
+              questões por simulado (máx. {totalDisponivel})
             </div>
           </div>
 
@@ -189,9 +235,12 @@ export default function Simulado() {
     cronometroRef.current?.travar();
     const tempoFinal = cronometroRef.current?.getTempo() ?? (tentativa.tempoSegundos || 0);
     try {
-      // Estatísticas sobre TODAS as questões do simulado (não só o filtro).
-      const todas = questoes.map((q) => respostas[q.id] || { resposta: null, correta: null });
-      const resumo = resumoRespostas(todas, questoes.length);
+      // Estatísticas sobre as questões desta tentativa (respeitando a seleção e ordem).
+      const questoesSimulado = tentativa.questoesIds?.length > 0
+        ? tentativa.questoesIds.map((id) => questoes.find((q) => q.id === id)).filter(Boolean)
+        : questoes;
+      const todas = questoesSimulado.map((q) => respostas[q.id] || { resposta: null, correta: null });
+      const resumo = resumoRespostas(todas, questoesSimulado.length);
 
       const { data, error } = await supabase
         .from('tentativas')
@@ -210,7 +259,7 @@ export default function Simulado() {
       if (error) throw error;
 
       // Cada questão errada entra (ou reseta) na revisão Leitner — caixa 1.
-      const erradas = questoes.filter((q) => respostas[q.id]?.correta === false);
+      const erradas = questoesSimulado.filter((q) => respostas[q.id]?.correta === false);
       if (erradas.length > 0) {
         const cards = erradas.map((q) => {
           const c = inicializarCard(q.id);

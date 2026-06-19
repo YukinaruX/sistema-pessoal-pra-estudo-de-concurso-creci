@@ -27,6 +27,7 @@ export function tentativaFromRow(row) {
     totalBrancos: row.total_brancos,
     percentual: row.percentual,
     status: row.status,
+    questoesIds: row.questoes_ids ?? null,
   };
 }
 
