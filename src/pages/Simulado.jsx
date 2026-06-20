@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Flag, Filter, Play, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flag, Filter, Play, RotateCcw, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient.js';
 import { questaoFromRow } from '../lib/mappers.js';
 import { useAuth } from '../hooks/useAuth.js';
@@ -9,6 +9,7 @@ import { useDificuldade } from '../hooks/useDificuldade.js';
 import { resumoRespostas, formatarTempo } from '../lib/estatisticas.js';
 import { inicializarCard } from '../lib/leitner.js';
 import { NIVEIS, ROTULOS, CORES } from '../lib/dificuldade.js';
+import { estoqueEsgotado } from '../lib/gerarQuestoes.js';
 import QuestaoCard from '../components/simulado/QuestaoCard.jsx';
 import Cronometro from '../components/simulado/Cronometro.jsx';
 import Loading from '../components/shared/Loading.jsx';
@@ -46,6 +47,9 @@ export default function Simulado() {
   const [finalizando, setFinalizando] = useState(false);
   const [entrouNaProva, setEntrouNaProva] = useState(false);
   const [qtdQuestoes, setQtdQuestoes] = useState(0);
+  const [gerando, setGerando] = useState(false);
+  const [erroGeracao, setErroGeracao] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const totalDisponivel = useMemo(() => {
     let base = filtro === 'Todas' ? questoes : questoes.filter((q) => q.disciplina === filtro);
@@ -64,9 +68,10 @@ export default function Simulado() {
   // O cronômetro vive isolado em <Cronometro> (não re-renderiza a página a cada
   // segundo). O pai só lê o tempo / trava a persistência via esta ref.
   const { dificuldades } = useDificuldade(user?.id);
+  const esgotado = questoes.length > 0 && estoqueEsgotado(questoes, dificuldades);
   const cronometroRef = useRef(null);
 
-  // Carrega as questões do simulado.
+  // Carrega as questões do simulado. refreshKey sobe a cada geração de questões.
   useEffect(() => {
     (async () => {
       try {
@@ -83,7 +88,7 @@ export default function Simulado() {
         setCarregandoQ(false);
       }
     })();
-  }, []);
+  }, [refreshKey]);
 
   const disciplinas = useMemo(
     () => ['Todas', ...Array.from(new Set(questoes.map((q) => q.disciplina)))],
@@ -108,6 +113,23 @@ export default function Simulado() {
     return (
       <ErroBox texto="Nenhuma questão encontrada. Rode o seed do banco (supabase/seed.sql)." />
     );
+
+  async function gerarMaisQuestoes() {
+    setGerando(true);
+    setErroGeracao(null);
+    try {
+      const simuladoId = questoes[0]?.simuladoId;
+      const { error } = await supabase.functions.invoke('gerar-questoes', {
+        body: { simulado_id: simuladoId, quantidade: 10 },
+      });
+      if (error) throw new Error(error.message);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      setErroGeracao(err.message);
+    } finally {
+      setGerando(false);
+    }
+  }
 
   async function começarNovo() {
     if (tentativa) await descartarTentativa();
@@ -228,6 +250,29 @@ export default function Simulado() {
               questões por simulado (máx. {totalDisponivel})
             </div>
           </div>
+
+          {esgotado && (
+            <div
+              className="card"
+              style={{ borderColor: 'var(--alerta)', background: 'rgba(234,179,8,0.07)', padding: 18 }}
+            >
+              <strong style={{ fontSize: 15 }}>Estoque de questões novas esgotado</strong>
+              <p className="muted-sm" style={{ marginTop: 6, marginBottom: 14, lineHeight: 1.6 }}>
+                Você já respondeu todas as {questoes.length} questões disponíveis ao menos uma vez.
+                Gere novas questões com IA para continuar praticando.
+              </p>
+              {erroGeracao && (
+                <p style={{ color: 'var(--erro)', fontSize: 14, marginBottom: 10 }}>{erroGeracao}</p>
+              )}
+              <button
+                className="btn btn-secundario"
+                onClick={gerarMaisQuestoes}
+                disabled={gerando}
+              >
+                <Sparkles size={16} /> {gerando ? 'Gerando questões com IA…' : 'Gerar 10 questões com IA'}
+              </button>
+            </div>
+          )}
 
           {erro && <ErroBox texto={erro} />}
 

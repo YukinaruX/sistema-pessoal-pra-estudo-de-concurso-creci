@@ -117,7 +117,10 @@ describe('diasAteProva', () => {
 
   it('retorna 0 quando a prova é hoje', () => {
     const hoje = new Date();
-    const dataProva = hoje.toISOString().split('T')[0];
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const dataProva = `${ano}-${mes}-${dia}`;
     expect(diasAteProva(dataProva, hoje)).toBe(0);
   });
 
