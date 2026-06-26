@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, CalendarDays, Save } from 'lucide-react';
+import { Plus, Trash2, Save } from 'lucide-react';
+import DateInput from '../components/shared/DateInput.jsx';
 import { supabase } from '../lib/supabaseClient.js';
 import { planoFromRow, planoItemFromRow } from '../lib/mappers.js';
 import { corDisciplina } from '../styles/theme.js';
@@ -126,12 +127,13 @@ export default function PlanoEstudos() {
       {erro && <div className="card" style={{ borderColor: 'var(--erro)' }}>{erro}</div>}
 
       <div className="card" style={{ display: 'flex', alignItems: 'flex-end', gap: 14, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <label className="campo">
-            <CalendarDays size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> Data da prova
-          </label>
-          <input type="date" className="input" value={dataProva} onChange={(e) => setDataProva(e.target.value)} />
-        </div>
+        <DateInput
+          label="Data da prova"
+          id="data-prova"
+          value={dataProva}
+          onChange={(e) => setDataProva(e.target.value)}
+          style={{ flex: 1, minWidth: 200 }}
+        />
         <button className="btn btn-secundario" onClick={salvarDataProva} disabled={salvandoData}>
           <Save size={16} /> Salvar
         </button>
@@ -171,15 +173,12 @@ export default function PlanoEstudos() {
               placeholder="Ex.: Crase, Lei 6.530/78…"
             />
           </div>
-          <div>
-            <label className="campo">Data planejada</label>
-            <input
-              type="date"
-              className="input"
-              value={novo.dataPlanejada}
-              onChange={(e) => setNovo({ ...novo, dataPlanejada: e.target.value })}
-            />
-          </div>
+          <DateInput
+            label="Data planejada"
+            id="data-planejada"
+            value={novo.dataPlanejada}
+            onChange={(e) => setNovo({ ...novo, dataPlanejada: e.target.value })}
+          />
           <button className="btn btn-primario" type="submit">
             <Plus size={17} /> Adicionar
           </button>
@@ -224,8 +223,8 @@ export default function PlanoEstudos() {
                 ))}
               </select>
 
-              <button className="btn btn-fantasma" onClick={() => remover(item)} title="Remover">
-                <Trash2 size={16} />
+              <button className="btn btn-perigo" onClick={() => remover(item)} title="Remover">
+                <Trash2 size={15} />
               </button>
             </div>
           </div>

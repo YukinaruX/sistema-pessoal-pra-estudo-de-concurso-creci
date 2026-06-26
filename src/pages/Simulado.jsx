@@ -51,6 +51,8 @@ export default function Simulado() {
   const [erroGeracao, setErroGeracao] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const { dificuldades } = useDificuldade(user?.id);
+
   const totalDisponivel = useMemo(() => {
     let base = filtro === 'Todas' ? questoes : questoes.filter((q) => q.disciplina === filtro);
     if (filtroDificuldade !== 'Todas') {
@@ -64,10 +66,6 @@ export default function Simulado() {
       setQtdQuestoes((prev) => (prev <= 0 ? totalDisponivel : Math.min(prev, totalDisponivel)));
     }
   }, [totalDisponivel, entrouNaProva]);
-
-  // O cronômetro vive isolado em <Cronometro> (não re-renderiza a página a cada
-  // segundo). O pai só lê o tempo / trava a persistência via esta ref.
-  const { dificuldades } = useDificuldade(user?.id);
   const esgotado = questoes.length > 0 && estoqueEsgotado(questoes, dificuldades);
   const cronometroRef = useRef(null);
 
