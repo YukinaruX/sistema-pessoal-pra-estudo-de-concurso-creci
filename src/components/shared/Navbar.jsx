@@ -1,13 +1,11 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  FileText,
-  History,
-  CalendarDays,
-  RefreshCw,
-  LogOut,
+  LayoutDashboard, FileText, History,
+  CalendarDays, RefreshCw, LogOut, Sun, Moon,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.js';
+import { useTheme } from '../../hooks/useTheme.js';
+import Logo from './Logo.jsx';
 
 const LINKS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -17,23 +15,9 @@ const LINKS = [
   { to: '/revisao', label: 'Revisão', icon: RefreshCw },
 ];
 
-function linkStyle({ isActive }) {
-  return {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 7,
-    padding: '8px 12px',
-    borderRadius: 'var(--raio-md)',
-    fontSize: 14,
-    fontWeight: 600,
-    whiteSpace: 'nowrap',
-    color: isActive ? 'var(--texto)' : 'var(--texto-fraco)',
-    background: isActive ? 'rgba(37,99,235,0.18)' : 'transparent',
-  };
-}
-
 export default function Navbar() {
   const { user, sair } = useAuth();
+  const { tema, alternarTema } = useTheme();
   const navigate = useNavigate();
 
   async function handleSair() {
@@ -41,71 +25,61 @@ export default function Navbar() {
     navigate('/login', { replace: true });
   }
 
+  const linkClass = ({ isActive }) => `nav-link${isActive ? ' ativo' : ''}`;
+
   return (
     <>
-      <header
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 20,
-          backdropFilter: 'blur(14px)',
-          background: 'rgba(15,23,42,0.72)',
-          borderBottom: '1px solid var(--borda)',
-        }}
-      >
-        <div
-          className="container"
-          style={{ display: 'flex', alignItems: 'center', gap: 18, height: 60 }}
-        >
-          <NavLink
-            to="/"
-            style={{
+      <header className="navbar">
+        <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 14, height: 54 }}>
+
+          <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none' }}>
+            <Logo size={30} />
+            <span style={{
               fontFamily: 'var(--fonte-titulo)',
-              fontWeight: 800,
-              fontSize: 18,
-              background: 'var(--gradiente)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              fontWeight: 900,
+              fontSize: 17,
+              color: 'var(--verde)',
+              letterSpacing: '-0.01em',
               whiteSpace: 'nowrap',
-            }}
-          >
-            CRECI-BA
+            }}>
+              CRECI-BA
+            </span>
           </NavLink>
 
-          {/* Navegação no topo — só no desktop (no mobile vira a barra inferior) */}
           <nav className="nav-desktop">
             {LINKS.map(({ to, label, icon: Icon, end }) => (
-              <NavLink key={to} to={to} end={end} style={linkStyle}>
-                <Icon size={17} />
+              <NavLink key={to} to={to} end={end} className={linkClass}>
+                <Icon size={16} />
                 {label}
               </NavLink>
             ))}
           </nav>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
-            <span
-              className="muted-sm nav-email"
-              title={user?.email}
-              style={{
-                maxWidth: 160,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+            <span className="muted-sm nav-email" title={user?.email} style={{
+              maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
               {user?.email}
             </span>
-            <button className="btn btn-fantasma" onClick={handleSair} title="Sair">
-              <LogOut size={16} />
+            <button
+              className="btn btn-fantasma"
+              onClick={alternarTema}
+              title={tema === 'escuro' ? 'Tema claro' : 'Tema escuro'}
+              style={{ padding: '7px 9px' }}
+            >
+              {tema === 'escuro' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <button className="btn btn-fantasma" onClick={handleSair} title="Sair" style={{ padding: '7px 9px' }}>
+              <LogOut size={15} />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Barra de navegação inferior — só no mobile */}
+      {/* Barra inferior mobile */}
       <nav className="nav-mobile">
         {LINKS.map(({ to, label, icon: Icon, end }) => (
-          <NavLink key={to} to={to} end={end} style={linkStyle} className="nav-mobile-item">
+          <NavLink key={to} to={to} end={end} className={linkClass} style={{ flexDirection: 'column', gap: 3, padding: '6px 4px', flex: 1, justifyContent: 'center', fontSize: 10.5 }}>
             <Icon size={20} />
             <span>{label}</span>
           </NavLink>

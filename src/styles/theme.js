@@ -1,38 +1,43 @@
-// Tokens de estilo compartilhados (cores, espaçamentos, badges por disciplina).
-// Mantém o esquema visual validado no protótipo: gradiente azul #1E3A5F → #2563EB.
+// Tokens de estilo — Duolingo style
+// Verde coruja #58cc02, sombras táteis, Nunito arredondada.
 
 export const theme = {
   cores: {
-    azulEscuro: '#1E3A5F',
-    azul: '#2563EB',
-    azulClaro: '#3B82F6',
-    gradiente: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)',
-    fundo: '#0F172A',
-    superficie: 'rgba(255,255,255,0.06)',
-    superficieSolida: '#1E293B',
-    borda: 'rgba(255,255,255,0.10)',
-    texto: '#F1F5F9',
-    textoFraco: '#94A3B8',
-    sucesso: '#22C55E',
-    erro: '#EF4444',
-    alerta: '#F59E0B',
+    verde:        '#58cc02',
+    verdeEscuro:  '#58a700',
+    verdeClaro:   '#89e219',
+    verdePalido:  '#dbf8c5',
+    laranja:      '#ff9600',
+    laranjaEscuro:'#cc7a00',
+    rosa:         '#ce82ff',
+    azulInfo:     '#1cb0f6',
+    vermelho:     '#ff4b4b',
+    amarelo:      '#ffc800',
+    neve:         '#ffffff',
+    enguia:       '#f7f7f7',
+    cisne:        '#e5e5e5',
+    lobo:         '#777777',
+    tinta:        '#3c3c3c',
+    lebre:        '#afafaf',
+    gradiente:    'linear-gradient(135deg, #58a700 0%, #58cc02 100%)',
   },
-  raio: { sm: '8px', md: '14px', lg: '20px', pill: '999px' },
+  raio: { sm: '8px', md: '16px', lg: '20px', pill: '9999px' },
   sombra: {
-    card: '0 8px 30px rgba(0,0,0,0.25)',
-    foco: '0 0 0 3px rgba(37,99,235,0.35)',
+    card: '0 2px 0 #e5e5e5',
+    btn:  '0 4px 0',
+    foco: '0 0 0 3px rgba(28,176,246,0.25)',
   },
 };
 
-// Cor de badge por disciplina. Disciplinas não mapeadas caem no fallback.
+// Cor de badge por disciplina
 const BADGES = {
-  Português: '#8B5CF6',
-  Matemática: '#06B6D4',
-  'Noções de Informática': '#10B981',
-  'Conhecimentos Específicos': '#2563EB',
-  'Legislação e Ética': '#F59E0B',
+  'Português':               '#8B5CF6',
+  'Matemática':              '#1cb0f6',
+  'Noções de Informática':   '#58cc02',
+  'Conhecimentos Específicos':'#ff9600',
+  'Legislação e Ética':      '#ce82ff',
 };
 
 export function corDisciplina(disciplina) {
-  return BADGES[disciplina] || '#64748B';
+  return BADGES[disciplina] || '#777777';
 }

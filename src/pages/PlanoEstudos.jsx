@@ -122,7 +122,7 @@ export default function PlanoEstudos() {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
-      <h1 style={{ fontSize: 28 }}>Plano de estudos</h1>
+      <h1 className="slide-esq" style={{ fontSize: 28 }}>Plano de estudos</h1>
 
       {erro && <div className="card" style={{ borderColor: 'var(--erro)' }}>{erro}</div>}
 
@@ -185,8 +185,8 @@ export default function PlanoEstudos() {
         </div>
       </form>
 
-      <div className="grid" style={{ gap: 10 }}>
-        {itens.length === 0 && <p className="muted-sm">Nenhum item ainda. Adicione assuntos ao seu cronograma.</p>}
+      <div className="grid surgir-lista" style={{ gap: 10 }}>
+        {itens.length === 0 && <p className="muted-sm surgir">Nenhum item ainda. Adicione assuntos ao seu cronograma.</p>}
         {itens.map((item) => (
           <div
             key={item.id}

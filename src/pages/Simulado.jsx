@@ -147,7 +147,7 @@ export default function Simulado() {
     if (tentativa) {
       return (
         <div className="grid" style={{ gap: 18 }}>
-          <h1 style={{ fontSize: 28 }}>Simulado</h1>
+          <h1 className="slide-esq" style={{ fontSize: 28 }}>Simulado</h1>
           <div className="card surgir" style={{ display: 'grid', gap: 18, padding: 26 }}>
             <div>
               <h2 style={{ fontSize: 20 }}>Você tem um simulado em andamento</h2>
@@ -178,7 +178,7 @@ export default function Simulado() {
     // Nenhuma tentativa: escolher filtro e começar.
     return (
       <div className="grid" style={{ gap: 18 }}>
-        <h1 style={{ fontSize: 28 }}>Simulado</h1>
+        <h1 className="slide-esq" style={{ fontSize: 28 }}>Simulado</h1>
         <div className="card surgir" style={{ display: 'grid', gap: 18, padding: 26 }}>
           <div>
             <h2 style={{ fontSize: 20 }}>Pronto para começar?</h2>
@@ -358,7 +358,7 @@ export default function Simulado() {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <div className="slide-esq" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <h1 style={{ fontSize: 26 }}>Simulado</h1>
         <Cronometro
           ref={cronometroRef}

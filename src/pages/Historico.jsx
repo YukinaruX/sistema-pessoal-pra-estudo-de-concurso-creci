@@ -44,10 +44,10 @@ export default function Historico() {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
-      <h1 style={{ fontSize: 28 }}>Histórico</h1>
+      <h1 className="slide-esq" style={{ fontSize: 28 }}>Histórico</h1>
 
       {tentativas.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+        <div className="card surgir" style={{ textAlign: 'center', padding: 40 }}>
           <Inbox size={40} className="texto-fraco" style={{ marginBottom: 12 }} />
           <p>Você ainda não finalizou nenhum simulado.</p>
           <Link to="/simulado" className="btn btn-primario" style={{ marginTop: 16 }}>
@@ -56,7 +56,7 @@ export default function Historico() {
         </div>
       ) : (
         <>
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))' }}>
+          <div className="grid surgir-lista" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))' }}>
             <Mini valor={tentativas.length} rotulo="Simulados feitos" />
             <Mini valor={`${media}%`} rotulo="Média de acertos" />
             <Mini valor={`${melhor}%`} rotulo="Melhor resultado" />
@@ -64,13 +64,13 @@ export default function Historico() {
 
           <SparkLine pontos={[...tentativas].reverse().map((t) => t.percentual || 0)} />
 
-          <div className="grid" style={{ gap: 12 }}>
+          <div className="grid surgir-lista" style={{ gap: 10 }}>
             {tentativas.map((t) => (
               <Link
                 key={t.id}
                 to={`/resultado/${t.id}`}
                 className="card"
-                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, textDecoration: 'none' }}
               >
                 <div
                   style={{

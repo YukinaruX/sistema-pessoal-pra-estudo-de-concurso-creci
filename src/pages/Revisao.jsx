@@ -73,7 +73,7 @@ export default function Revisao() {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <div className="slide-esq" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <h1 style={{ fontSize: 28 }}>Revisão de erros</h1>
         <span className="badge" style={{ background: 'var(--superficie-2)', gap: 6, marginLeft: 'auto' }}>
           <Layers size={15} /> {Math.min(pos, fila.length)} / {fila.length}
@@ -81,7 +81,7 @@ export default function Revisao() {
       </div>
 
       {terminou ? (
-        <div className="card" style={{ textAlign: 'center', padding: 44 }}>
+        <div className="card surgir" style={{ textAlign: 'center', padding: 44 }}>
           <PartyPopper size={44} color="var(--sucesso)" style={{ marginBottom: 12 }} />
           {fila.length === 0 ? (
             <>

@@ -65,18 +65,18 @@ export default function ResultadoTentativa() {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
-      <Link to="/historico" className="muted-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <Link to="/historico" className="muted-sm slide-esq" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
         <ArrowLeft size={15} /> Voltar ao histórico
       </Link>
 
-      <h1 style={{ fontSize: 28 }}>Resultado do simulado</h1>
+      <h1 className="slide-esq" style={{ fontSize: 28, animationDelay: '0.05s' }}>Resultado do simulado</h1>
 
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))' }}>
-        <Metrica icon={Target} cor="var(--azul-claro)" valor={`${tentativa.percentual ?? 0}%`} rotulo="Aproveitamento" />
-        <Metrica icon={CheckCircle2} cor="var(--sucesso)" valor={tentativa.totalCertas ?? 0} rotulo="Certas" />
-        <Metrica icon={XCircle} cor="var(--erro)" valor={tentativa.totalErradas ?? 0} rotulo="Erradas" />
-        <Metrica icon={MinusCircle} cor="var(--texto-fraco)" valor={tentativa.totalBrancos ?? 0} rotulo="Em branco" />
-        <Metrica icon={Clock} cor="var(--alerta)" valor={formatarTempo(tentativa.tempoSegundos)} rotulo="Tempo" />
+      <div className="grid surgir-lista" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))' }}>
+        <Metrica icon={Target} cor="var(--azul-info)" valor={`${tentativa.percentual ?? 0}%`} rotulo="Aproveitamento" />
+        <Metrica icon={CheckCircle2} cor="var(--verde)" valor={tentativa.totalCertas ?? 0} rotulo="Certas" />
+        <Metrica icon={XCircle} cor="var(--vermelho)" valor={tentativa.totalErradas ?? 0} rotulo="Erradas" />
+        <Metrica icon={MinusCircle} cor="var(--lobo)" valor={tentativa.totalBrancos ?? 0} rotulo="Em branco" />
+        <Metrica icon={Clock} cor="var(--laranja)" valor={formatarTempo(tentativa.tempoSegundos)} rotulo="Tempo" />
       </div>
 
       {(() => {

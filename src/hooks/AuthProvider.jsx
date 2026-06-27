@@ -32,11 +32,29 @@ export function AuthProvider({ children }) {
   );
 
   const cadastrar = useCallback(
-    (email, senha) => supabase.auth.signUp({ email, password: senha }),
+    (email, senha, nome) =>
+      supabase.auth.signUp({
+        email,
+        password: senha,
+        options: { data: { nome: nome?.trim() || '' } },
+      }),
     []
   );
 
   const sair = useCallback(() => supabase.auth.signOut(), []);
+
+  const resetarSenha = useCallback(
+    (email) =>
+      supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/redefinir-senha`,
+      }),
+    []
+  );
+
+  const atualizarSenha = useCallback(
+    (novaSenha) => supabase.auth.updateUser({ password: novaSenha }),
+    []
+  );
 
   const valor = {
     session,
@@ -45,6 +63,8 @@ export function AuthProvider({ children }) {
     entrar,
     cadastrar,
     sair,
+    resetarSenha,
+    atualizarSenha,
   };
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
