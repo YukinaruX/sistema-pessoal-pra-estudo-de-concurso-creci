@@ -22,13 +22,14 @@ export default function JogoMemoria() {
   const [fase, setFase]             = useState('aguardando');
   const [disciplina, setDisciplina] = useState('Todas');
   const [cartas, setCartas]         = useState([]);
-  const [viradas, setViradas]       = useState([]); // ids de cartas viradas (max 2)
+  const [viradas, setViradas]       = useState([]);
   const [combinadas, setCombinadas] = useState(new Set());
   const [tentativas, setTentativas] = useState(0);
   const [tempo, setTempo]           = useState(0);
   const [recorde, setRecorde]       = useState(null);
   const [carregando, setCarregando] = useState(false);
   const [bloqueado, setBloqueado]   = useState(false);
+  const [semPares, setSemPares]     = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -40,11 +41,16 @@ export default function JogoMemoria() {
 
   const iniciar = useCallback(async () => {
     setCarregando(true);
+    setSemPares(false);
     let q = supabase.from('jogo_pares').select('*');
     if (disciplina !== 'Todas') q = q.eq('disciplina', disciplina);
     const { data } = await q;
-    const pares = embaralhar(data || []).slice(0, 8); // 8 pares = 16 cartas
-    if (pares.length < 4) { alert('Sem pares suficientes para esta disciplina.'); setCarregando(false); return; }
+    const pool  = embaralhar(data || []);
+    const min   = 3; // mínimo de pares para jogar
+    const max   = 8; // máximo de pares (16 cartas)
+    const pares = pool.slice(0, max);
+    if (pares.length < min) { setSemPares(true); setCarregando(false); return; }
+    // Adapta o grid: 3-4 pares → cols=4, 5-6 → cols=4, 7-8 → cols=4 (sempre 4 cols)
     setCartas(criarCartas(pares));
     setViradas([]); setCombinadas(new Set()); setTentativas(0); setTempo(0); setBloqueado(false);
     setCarregando(false);
@@ -131,6 +137,21 @@ export default function JogoMemoria() {
             {DISCIPLINAS.map(d => <option key={d}>{d}</option>)}
           </select>
         </div>
+        {semPares && (
+          <div style={{
+            marginBottom: 16, padding: '14px 16px',
+            borderRadius: 'var(--raio-sm)',
+            background: 'var(--cisne)',
+            border: '2px solid var(--lobo)',
+            fontSize: 13, lineHeight: 1.6, textAlign: 'left',
+          }}>
+            <strong>Nenhum par cadastrado{disciplina !== 'Todas' ? ` para "${disciplina}"` : ''}.</strong>
+            <br />
+            Adicione pares na tabela <code>jogo_pares</code> do Supabase para jogar.
+            <br />
+            <span className="muted-sm">Exemplo: <code>termo = "CRECI"</code> / <code>definicao = "Conselho Regional de Corretores de Imóveis"</code></span>
+          </div>
+        )}
         <button className="btn btn-primario" style={{ width: '100%', fontSize: 16 }}
           onClick={iniciar} disabled={carregando}>
           {carregando ? 'Carregando…' : <><Grid size={16} /> Iniciar jogo</>}

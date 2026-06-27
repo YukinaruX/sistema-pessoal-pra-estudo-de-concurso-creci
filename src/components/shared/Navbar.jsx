@@ -20,6 +20,7 @@ export default function Navbar() {
   const { user, sair } = useAuth();
   const { tema, alternarTema } = useTheme();
   const navigate = useNavigate();
+  const nome = user?.user_metadata?.nome || user?.email?.split('@')[0] || '';
 
   async function handleSair() {
     await sair();
@@ -30,58 +31,61 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="navbar">
-        <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 14, height: 54 }}>
+      {/* ── Sidebar desktop ── */}
+      <aside className="sidebar">
+        <NavLink to="/" className="sidebar-logo">
+          <Logo size={34} />
+          <span className="sidebar-titulo">CRECI-BA</span>
+        </NavLink>
 
-          <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none' }}>
-            <Logo size={30} />
-            <span style={{
-              fontFamily: 'var(--fonte-titulo)',
-              fontWeight: 900,
-              fontSize: 17,
-              color: 'var(--verde)',
-              letterSpacing: '-0.01em',
-              whiteSpace: 'nowrap',
-            }}>
-              CRECI-BA
-            </span>
-          </NavLink>
+        <nav className="sidebar-nav">
+          {LINKS.map(({ to, label, icon: Icon, end }) => (
+            <NavLink key={to} to={to} end={end} className={linkClass}>
+              <Icon size={18} />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
 
-          <nav className="nav-desktop">
-            {LINKS.map(({ to, label, icon: Icon, end }) => (
-              <NavLink key={to} to={to} end={end} className={linkClass}>
-                <Icon size={16} />
-                {label}
-              </NavLink>
-            ))}
-          </nav>
+        <div className="sidebar-rodape">
+          {/* Card do usuário */}
+          <div className="sidebar-usuario-card">
+            <div className="sidebar-avatar">
+              {nome.charAt(0).toUpperCase()}
+            </div>
+            <span className="sidebar-usuario-nome">{nome}</span>
+          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-            <span className="muted-sm nav-email" title={user?.email} style={{
-              maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {user?.email}
-            </span>
+          {/* Ações */}
+          <div style={{ display: 'flex', gap: 6 }}>
             <button
-              className="btn btn-fantasma"
+              className="btn btn-fantasma sidebar-btn-acao"
               onClick={alternarTema}
               title={tema === 'escuro' ? 'Tema claro' : 'Tema escuro'}
-              style={{ padding: '7px 9px' }}
             >
               {tema === 'escuro' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
-            <button className="btn btn-fantasma" onClick={handleSair} title="Sair" style={{ padding: '7px 9px' }}>
+            <button
+              className="btn btn-fantasma sidebar-btn-acao"
+              onClick={handleSair}
+              title="Sair"
+            >
               <LogOut size={15} />
+              <span style={{ fontSize: 13 }}>Sair</span>
             </button>
           </div>
         </div>
-      </header>
+      </aside>
 
-      {/* Barra inferior mobile */}
+      {/* ── Barra inferior mobile ── */}
       <nav className="nav-mobile">
         {LINKS.map(({ to, label, icon: Icon, end }) => (
-          <NavLink key={to} to={to} end={end} className={linkClass} style={{ flexDirection: 'column', gap: 3, padding: '6px 4px', flex: 1, justifyContent: 'center', fontSize: 10.5 }}>
-            <Icon size={20} />
+          <NavLink
+            key={to} to={to} end={end}
+            className={linkClass}
+            style={{ flexDirection: 'column', gap: 2, flex: 1, justifyContent: 'center', padding: '6px 2px', fontSize: 9.5 }}
+          >
+            <Icon size={19} />
             <span>{label}</span>
           </NavLink>
         ))}
