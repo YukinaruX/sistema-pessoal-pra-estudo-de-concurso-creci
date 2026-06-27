@@ -519,6 +519,41 @@ a.card:hover, .card-elevavel:hover {
 }
 
 /* =============================================================
+   Jogos — Jogo da Memória (flip 3D)
+   ============================================================= */
+.carta-jogo-container {
+  perspective: 600px;
+  cursor: pointer;
+  user-select: none;
+}
+.carta-jogo-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+.carta-jogo-inner.virada {
+  transform: rotateY(180deg);
+}
+.carta-jogo-frente,
+.carta-jogo-verso {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--raio-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  text-align: center;
+}
+.carta-jogo-verso {
+  transform: rotateY(180deg);
+}
+
+/* =============================================================
    Navbar
    ============================================================= */
 .navbar {

@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, History,
-  CalendarDays, RefreshCw, LogOut, Sun, Moon,
+  CalendarDays, RefreshCw, LogOut, Sun, Moon, Gamepad2,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useTheme } from '../../hooks/useTheme.js';
@@ -13,6 +13,7 @@ const LINKS = [
   { to: '/historico', label: 'Histórico', icon: History },
   { to: '/plano', label: 'Plano', icon: CalendarDays },
   { to: '/revisao', label: 'Revisão', icon: RefreshCw },
+  { to: '/jogos', label: 'Jogos', icon: Gamepad2 },
 ];
 
 export default function Navbar() {
